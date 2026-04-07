@@ -22,7 +22,7 @@ export function getVideoDuration(videoPath) {
 }
 
 /**
- * Extracts a frame at (duration - 0.1s) as 1080x1920 PNG.
+ * Extracts a frame (duration - 1s) as 1080x1920 PNG to avoid motion blur.
  */
 export function extractLastFrame(videoPath, outputPath) {
   return new Promise((resolve, reject) => {
@@ -36,7 +36,7 @@ export function extractLastFrame(videoPath, outputPath) {
         return reject(new Error('Could not determine video duration'));
       }
 
-      const seekTime = Math.max(0, duration - 0.1);
+      const seekTime = Math.max(0, duration - 1.0);
 
       const inPath = videoPath.replace(/\\/g, '/');
       const outPath = outputPath.replace(/\\/g, '/');
