@@ -9,6 +9,8 @@ import ffmpegPath from 'ffmpeg-static';
 import ffprobePath from 'ffprobe-static';
 import processRouter from './routes/process.js';
 
+config();
+
 // Configure FFmpeg/FFprobe to use bundled static binaries
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath.path);
@@ -16,8 +18,7 @@ ffmpeg.setFfprobePath(ffprobePath.path);
 console.log("🎬 Bairan Effect Studio - Deployment Environment Check:");
 console.log("FFmpeg path:", ffmpegPath);
 console.log("FFprobe path:", ffprobePath.path);
-
-config();
+console.log("REMOVE_BG_API_KEY set:", !!process.env.REMOVE_BG_API_KEY);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
