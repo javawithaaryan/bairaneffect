@@ -4,9 +4,9 @@ const STEPS = [
   { key: 'Queued',                 label: 'Queued',         icon: '⏳', pct: 0   },
   { key: 'Extracting last frame',  label: 'Extract Frame',  icon: '🎞',  pct: 10  },
   { key: 'Removing background',   label: 'Remove BG',      icon: '✂️', pct: 30  },
-  { key: 'Adding sticker border', label: 'Add Border',      icon: '🖼',  pct: 55  },
-  { key: 'Creating image slideshow', label: 'Slideshow',   icon: '🎠',  pct: 70  },
-  { key: 'Composing final video', label: 'Compose',         icon: '🎬',  pct: 85  },
+  { key: 'Polishing cutout', label: 'Polish Cutout',      icon: '🖼',  pct: 55  },
+  { key: 'Building slideshow', label: 'Build Slideshow',   icon: '🎠',  pct: 70  },
+  { key: 'Rendering final video', label: 'Render Final',         icon: '🎬',  pct: 85  },
   { key: 'Done',                  label: 'Complete',        icon: '✅',  pct: 100 },
 ];
 
@@ -16,7 +16,7 @@ function getStepIndex(step) {
   return idx === -1 ? 0 : idx;
 }
 
-export default function ProgressTracker({ status }) {
+export default function ProgressTracker({ status, jobId }) {
   const [dots, setDots] = useState('');
   const currentStep = status?.step || 'Queued';
   const progress = status?.progress ?? 0;
@@ -33,6 +33,10 @@ export default function ProgressTracker({ status }) {
       <div className="processing-header">
         <h2>Processing your video{dots}</h2>
         <p className="processing-hint">This may take 30–90 seconds depending on video length.</p>
+        {status?.status === 'queued' && status?.queuePosition > 0 && (
+          <p className="processing-hint">In queue: position {status.queuePosition}</p>
+        )}
+        <p className="processing-job-id">Job: {jobId || 'pending'}</p>
       </div>
 
       {/* Progress Bar */}

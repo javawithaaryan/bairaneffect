@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import UploadZone from './components/UploadZone';
 import ProgressTracker from './components/ProgressTracker';
 import VideoPreview from './components/VideoPreview';
@@ -14,6 +14,7 @@ export default function App() {
   const [jobId, setJobId] = useState(null);
   const [jobStatus, setJobStatus] = useState(null);
   const [error, setError] = useState(null);
+  const pollRef = useRef(null);
 
   async function handleSubmit({ videoFile, imageFiles }) {
     setError(null);
@@ -27,32 +28,43 @@ export default function App() {
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       setJobId(data.jobId);
       setStage('processing');
-      pollStatus(data.jobId);
+      startPolling(data.jobId);
     } catch (err) {
       setError(err.message);
     }
   }
 
-  function pollStatus(id) {
-    const interval = setInterval(async () => {
+  function stopPolling() {
+    if (pollRef.current) clearTimeout(pollRef.current);
+    pollRef.current = null;
+  }
+
+  function startPolling(id) {
+    stopPolling();
+    const tick = async () => {
       try {
         const res = await fetch(`${API_BASE}/status/${id}`);
         const data = await res.json();
         setJobStatus(data);
         if (data.status === 'done') {
-          clearInterval(interval);
           setStage('done');
-        } else if (data.status === 'error') {
-          clearInterval(interval);
+          stopPolling();
+          return;
+        }
+        if (data.status === 'error') {
           setError(data.error || 'Processing failed');
           setStage('upload');
+          stopPolling();
+          return;
         }
+        pollRef.current = setTimeout(tick, data.status === 'queued' ? 2000 : 1000);
       } catch {
-        clearInterval(interval);
         setError('Lost connection to server');
         setStage('upload');
+        stopPolling();
       }
-    }, 1500);
+    };
+    tick();
   }
 
   function handleReset() {
@@ -60,7 +72,10 @@ export default function App() {
     setJobId(null);
     setJobStatus(null);
     setError(null);
+    stopPolling();
   }
+
+  useEffect(() => () => stopPolling(), []);
 
   return (
     <div className="app-shell">
@@ -86,7 +101,7 @@ export default function App() {
         )}
 
         {stage === 'upload' && <UploadZone onSubmit={handleSubmit} />}
-        {stage === 'processing' && <ProgressTracker status={jobStatus} />}
+        {stage === 'processing' && <ProgressTracker status={jobStatus} jobId={jobId} />}
         {stage === 'done' && jobStatus?.outputUrl && (
           <VideoPreview
             outputUrl={`${DOWNLOAD_BASE}${jobStatus.outputUrl}`}

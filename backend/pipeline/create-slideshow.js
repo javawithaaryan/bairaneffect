@@ -25,21 +25,21 @@ function runFfmpeg(args) {
   });
 }
 
-function slideshowChainDuration(numSlides) {
-  const perImage = 1.5;
-  const fade = 0.4;
+function slideshowChainDuration(numSlides, perImage, fade) {
   if (numSlides <= 0) return 0;
   if (numSlides === 1) return perImage;
   return numSlides * perImage - (numSlides - 1) * fade;
 }
 
-function expandImagePaths(imagePaths, minDurationSeconds) {
-  const expanded = [];
-  if (!imagePaths.length) return expanded;
-  do {
-    expanded.push(...imagePaths);
-  } while (slideshowChainDuration(expanded.length) < minDurationSeconds);
-  return expanded;
+function buildSequencedPaths(imagePaths, minDurationSeconds, perImage, fade, maxSlides = 100) {
+  if (!imagePaths.length) return [];
+  const targetSlides = Math.min(
+    maxSlides,
+    Math.max(imagePaths.length, Math.ceil((minDurationSeconds - fade) / Math.max(0.1, perImage - fade)))
+  );
+  const out = [];
+  for (let i = 0; i < targetSlides; i += 1) out.push(imagePaths[i % imagePaths.length]);
+  return out;
 }
 
 /**
@@ -59,14 +59,15 @@ export function createSlideshow(imagePaths, outputPath, options = {}) {
       return reject(new Error('No images provided'));
     }
 
-    const perImage = 1.5;
-    const fadeDuration = 0.4;
-    const expanded = expandImagePaths(imagePaths, minDurationSeconds);
+    const sourceCount = imagePaths.length;
+    const perImage = sourceCount > 70 ? 1.2 : sourceCount > 35 ? 1.3 : 1.4;
+    const fadeDuration = sourceCount > 70 ? 0.3 : 0.4;
+    const sequenced = buildSequencedPaths(imagePaths, minDurationSeconds, perImage, fadeDuration, 100);
     const out = toPosix(outputPath);
 
     (async () => {
       try {
-        if (expanded.length === 1) {
+        if (sequenced.length === 1) {
           await runFfmpeg([
             '-y',
             '-loop',
@@ -74,12 +75,16 @@ export function createSlideshow(imagePaths, outputPath, options = {}) {
             '-t',
             String(minDurationSeconds),
             '-i',
-            toPosix(expanded[0]),
+            toPosix(sequenced[0]),
             '-vf',
             'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,format=yuv420p',
             '-an',
             '-c:v',
             'libx264',
+            '-preset',
+            'veryfast',
+            '-crf',
+            '20',
             '-pix_fmt',
             'yuv420p',
             '-r',
@@ -91,27 +96,28 @@ export function createSlideshow(imagePaths, outputPath, options = {}) {
           return resolve();
         }
 
-        const args = ['-y'];
+        const args = ['-y', '-threads', String(Math.max(2, Number(process.env.FFMPEG_THREADS) || 4))];
         const hold = perImage + fadeDuration;
-        expanded.forEach((img) => {
+        sequenced.forEach((img) => {
           args.push('-loop', '1', '-t', String(hold), '-i', toPosix(img));
         });
 
         let fc = '';
-        for (let i = 0; i < expanded.length; i += 1) {
+        for (let i = 0; i < sequenced.length; i += 1) {
           fc += `[${i}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p[s${i}];`;
         }
 
         let prev = '[s0]';
         let offset = perImage - fadeDuration;
-        for (let i = 1; i < expanded.length; i += 1) {
-          const label = i === expanded.length - 1 ? '[vraw]' : `[x${i}]`;
+        for (let i = 1; i < sequenced.length; i += 1) {
+          const label = i === sequenced.length - 1 ? '[vraw]' : `[x${i}]`;
           fc += `${prev}[s${i}]xfade=transition=fade:duration=${fadeDuration}:offset=${offset}${label};`;
           prev = label;
           offset += perImage - fadeDuration;
         }
 
-        fc += `[vraw]trim=duration=${minDurationSeconds},setpts=PTS-STARTPTS,format=yuv420p[vout]`;
+        const chainDuration = slideshowChainDuration(sequenced.length, perImage, fadeDuration);
+        fc += `[vraw]trim=duration=${Math.min(chainDuration, minDurationSeconds + 1.5)},setpts=PTS-STARTPTS,format=yuv420p[vout]`;
 
         args.push(
           '-filter_complex',
@@ -121,6 +127,10 @@ export function createSlideshow(imagePaths, outputPath, options = {}) {
           '-an',
           '-c:v',
           'libx264',
+          '-preset',
+          'veryfast',
+          '-crf',
+          '20',
           '-pix_fmt',
           'yuv420p',
           '-r',

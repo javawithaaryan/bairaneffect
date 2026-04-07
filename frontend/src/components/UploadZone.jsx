@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import VirtualImageGrid from './VirtualImageGrid';
 
 function formatSize(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -13,13 +14,25 @@ export default function UploadZone({ onSubmit }) {
   const [videoPrev, setVideoPrev] = useState(null);
   const videoRef = useRef();
   const imagesRef = useRef();
+  const MAX_IMAGES = 100;
 
   const setVideo = useCallback((file) => {
     if (!file) return;
     setVideoFile(file);
-    const url = URL.createObjectURL(file);
-    setVideoPrev(url);
-  }, []);
+    if (videoPrev) URL.revokeObjectURL(videoPrev);
+    setVideoPrev(URL.createObjectURL(file));
+  }, [videoPrev]);
+
+  useEffect(() => () => {
+    if (videoPrev) URL.revokeObjectURL(videoPrev);
+  }, [videoPrev]);
+
+  function appendImages(newFiles) {
+    setImageFiles((prev) => {
+      const merged = [...prev, ...newFiles];
+      return merged.slice(0, MAX_IMAGES);
+    });
+  }
 
   function handleDrop(e) {
     e.preventDefault();
@@ -28,7 +41,7 @@ export default function UploadZone({ onSubmit }) {
     const video = files.find(f => f.type.startsWith('video/'));
     const images = files.filter(f => f.type.startsWith('image/'));
     if (video) setVideo(video);
-    if (images.length) setImageFiles(prev => [...prev, ...images]);
+    if (images.length) appendImages(images);
   }
 
   async function handleSubmit(e) {
@@ -117,31 +130,12 @@ export default function UploadZone({ onSubmit }) {
             accept="image/*"
             multiple
             hidden
-            onChange={e => setImageFiles(prev => [...prev, ...e.target.files])}
+            onChange={e => appendImages([...e.target.files])}
           />
         </div>
 
         {imageFiles.length > 0 && (
-          <div className="image-thumbs">
-            {imageFiles.map((f, i) => (
-              <div
-                key={i}
-                className="thumb-wrap"
-                title={f.name}
-              >
-                <div
-                  className="thumb"
-                  style={{ backgroundImage: `url(${URL.createObjectURL(f)})` }}
-                />
-                <button
-                  type="button"
-                  className="thumb-remove"
-                  onClick={() => removeImage(i)}
-                  aria-label={`Remove ${f.name}`}
-                >✕</button>
-              </div>
-            ))}
-          </div>
+          <VirtualImageGrid files={imageFiles} onRemove={removeImage} />
         )}
 
         {imageFiles.length === 0 && (
@@ -149,6 +143,7 @@ export default function UploadZone({ onSubmit }) {
             Add background images to create a freeze-frame slideshow behind your sticker.
           </p>
         )}
+        {imageFiles.length > 0 && <p className="images-hint">Selected {imageFiles.length} / {MAX_IMAGES} images.</p>}
       </div>
 
       {/* ── Submit ── */}
