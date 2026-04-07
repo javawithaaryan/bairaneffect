@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import ffmpegPath from 'ffmpeg-static';
 
 function toPosix(p) {
   return String(p).replace(/\\/g, '/');
@@ -6,7 +7,7 @@ function toPosix(p) {
 
 function runFfmpeg(args) {
   return new Promise((resolve, reject) => {
-    const child = spawn('ffmpeg', args, {
+    const child = spawn(ffmpegPath, args, {
       stdio: ['ignore', 'ignore', 'pipe']
     });
     let stderr = '';

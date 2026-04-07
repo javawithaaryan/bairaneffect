@@ -9,7 +9,9 @@ const SCALE_CROP =
 export function getVideoDuration(videoPath) {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(videoPath, (err, meta) => {
-      if (err) return reject(new Error(`ffprobe failed: ${err.message}`));
+      if (err) {
+        return reject(new Error(`Video metadata extraction failed (ffprobe). FFmpeg binary not found or inaccessible: ${err.message}`));
+      }
       const duration = parseFloat(meta.format?.duration);
       if (!Number.isFinite(duration) || duration <= 0) {
         return reject(new Error('Could not determine video duration'));
@@ -25,7 +27,9 @@ export function getVideoDuration(videoPath) {
 export function extractLastFrame(videoPath, outputPath) {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(videoPath, (err, meta) => {
-      if (err) return reject(new Error(`ffprobe failed: ${err.message}`));
+      if (err) {
+        return reject(new Error(`Video metadata extraction failed (ffprobe). FFmpeg binary not found or inaccessible: ${err.message}`));
+      }
 
       const duration = parseFloat(meta.format?.duration);
       if (!Number.isFinite(duration) || duration <= 0) {

@@ -1,5 +1,7 @@
-﻿import { spawn } from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs';
+import ffmpegPath from 'ffmpeg-static';
+import ffprobePath from 'ffprobe-static';
 
 function toPosix(p) {
   return String(p).replace(/\\/g, '/');
@@ -7,7 +9,7 @@ function toPosix(p) {
 
 function runFfmpeg(args) {
   return new Promise((resolve, reject) => {
-    const child = spawn('ffmpeg', args, {
+    const child = spawn(ffmpegPath, args, {
       stdio: ['ignore', 'ignore', 'pipe']
     });
     let stderr = '';
@@ -47,7 +49,7 @@ export function composeVideo(videoPath, stickerPath, middlePath, outputPath) {
       try {
         // ── probe duration ───────────────────────────────────────────────
         const duration = await new Promise((res, rej) => {
-          const child = spawn('ffprobe', [
+          const child = spawn(ffprobePath.path, [
             '-v', 'error',
             '-show_entries', 'format=duration',
             '-of', 'default=noprint_wrappers=1:nokey=1',

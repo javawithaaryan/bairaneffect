@@ -4,7 +4,18 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { config } from 'dotenv';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegPath from 'ffmpeg-static';
+import ffprobePath from 'ffprobe-static';
 import processRouter from './routes/process.js';
+
+// Configure FFmpeg/FFprobe to use bundled static binaries
+ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath.path);
+
+console.log("🎬 Bairan Effect Studio - Deployment Environment Check:");
+console.log("FFmpeg path:", ffmpegPath);
+console.log("FFprobe path:", ffprobePath.path);
 
 config();
 
