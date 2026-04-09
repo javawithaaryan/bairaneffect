@@ -8,14 +8,8 @@ import FormData from 'form-data';
  */
 export async function removeBackground(inputPath, outputPath) {
   const apiKey = process.env.REMOVE_BG_API_KEY;
-
-  console.log(
-    "REMOVE_BG_API_KEY:",
-    apiKey ? apiKey.slice(0, 8) + "..." : "undefined"
-  );
-
   if (!apiKey) {
-    throw new Error('REMOVE_BG_API_KEY is missing in backend .env');
+    throw new Error('REMOVE_BG_API_KEY is not set in environment variables');
   }
 
   const formData = new FormData();

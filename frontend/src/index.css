@@ -435,27 +435,9 @@ main {
 }
 
 .image-thumbs {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  display: flex;
   gap: 8px;
-}
-
-.image-virtual-viewport {
-  max-height: 220px;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 6px;
-  background: var(--bg-2);
-}
-
-.image-virtual-spacer {
-  position: relative;
-}
-
-.image-virtual-spacer .image-thumbs {
-  position: absolute;
-  inset: 0 0 auto 0;
+  flex-wrap: wrap;
 }
 
 .thumb-wrap {
@@ -463,12 +445,18 @@ main {
 }
 
 .thumb {
-  width: 100%;
-  aspect-ratio: 1;
+  width: 60px;
+  height: 60px;
   border-radius: 6px;
+  background-size: cover;
+  background-position: center;
   background-color: var(--border);
   border: 1px solid var(--border-light);
-  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
   transition: border-color 0.2s;
 }
 
@@ -626,14 +614,6 @@ main {
   letter-spacing: 0.5px;
 }
 
-.processing-job-id {
-  margin-top: 6px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  letter-spacing: 0.5px;
-}
-
 /* Progress Bar */
 .progress-bar-widget {
   display: flex;
@@ -700,7 +680,6 @@ main {
 
 @media (max-width: 560px) {
   .steps-grid { grid-template-columns: repeat(3, 1fr); }
-  .image-thumbs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 .step {

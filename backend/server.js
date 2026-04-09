@@ -4,30 +4,16 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { config } from 'dotenv';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegPath from 'ffmpeg-static';
-import ffprobePath from 'ffprobe-static';
 import processRouter from './routes/process.js';
 
 config();
-
-// Configure FFmpeg/FFprobe to use bundled static binaries
-ffmpeg.setFfmpegPath(ffmpegPath);
-ffmpeg.setFfprobePath(ffprobePath.path);
-
-console.log("🎬 Bairan Effect Studio - Deployment Environment Check:");
-console.log("FFmpeg path:", ffmpegPath);
-console.log("FFprobe path:", ffprobePath.path);
-console.log("REMOVE_BG_API_KEY set:", !!process.env.REMOVE_BG_API_KEY);
+console.log("API key loaded:", !!process.env.REMOVE_BG_API_KEY);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 
 // Static file serving for output downloads

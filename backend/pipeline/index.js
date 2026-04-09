@@ -64,13 +64,13 @@ export async function runPipeline({ jobId, videoPath, imagePaths, onProgress }) 
     }
     log(jobId, `Background removed → ${bgRemovedPath}`);
 
-    onProgress('Polishing cutout', 55);
+    onProgress('Adding sticker border', 55);
     try {
       await addBorder(bgRemovedPath, borderedPath);
     } catch (e) {
-      throw new Error(`Step 3 (cutout polish): ${e.message}`);
+      throw new Error(`Step 3 (border): ${e.message}`);
     }
-    log(jobId, `Cutout polished → ${borderedPath}`);
+    log(jobId, `Border added → ${borderedPath}`);
 
     let duration;
     try {
@@ -85,7 +85,7 @@ export async function runPipeline({ jobId, videoPath, imagePaths, onProgress }) 
 
     let middlePath = null;
     if (imagePaths.length > 0) {
-      onProgress('Building slideshow', 70);
+      onProgress('Creating image slideshow', 70);
       intermediates.push(slideshowPath);
       try {
         await createSlideshow(imagePaths, slideshowPath, {
@@ -98,7 +98,7 @@ export async function runPipeline({ jobId, videoPath, imagePaths, onProgress }) 
       log(jobId, `Slideshow created → ${slideshowPath} (min ${slideshowMin}s)`);
     }
 
-    onProgress('Rendering final video', 85);
+    onProgress('Composing final video', 85);
     try {
       await composeVideo(videoPath, borderedPath, middlePath, outputPath);
     } catch (e) {
